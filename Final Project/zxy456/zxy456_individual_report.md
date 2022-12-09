@@ -188,11 +188,49 @@ initialize $x_I=\sum_{i\in I}/|I|$ for every positive bag $B_I$
 
 ## mi_SVM with Euclidean distance
 
-The original multi instance learning support vector machine use the imbalence information provided by positive and negative bag to inference positive instance using the nagetive instance in nagetive bags. With this property it is actually using the instances from negativev bag to correct the prediction of itself over time. The novel approach I have made is use the distance to find the selector variable which can represent the bag. Assume that instance is the one that has positive label and train the decision boundary using that information.
+The original multi instance learning support vector machine use the imbalence information provided by positive and negative bag to inference positive instance using the nagetive instance in nagetive bags. With this property it is actually using the instances from negative bag to correct the prediction of itself over time. The novel approach I have made is use the distance to find the selector variable which can represent the bag. Assume that instance is the one that has positive label and train the decision boundary using that information.
 
 The extension decrese the runtime significantly. Before I retrofit my code to make it more efficient it could take hours to run, but with the extension it can finish in minutes. The improvement of the extension allow my algorithm not computing the argmax in the training epoch which saved a lot of time. I noticed from the result I have that this mechod is sensitive to outlier
 
+## MI_SVM with mean feature as positive label
+
+The origional MI_SVM which using the i that can give the maximum $f_i$ as the selected instance of the bag. In my approach, I assume that the distribution of positive and negative instance is far enough that a few positive instance can affect the mean of whole bag. Then I create positive instance by doing $x_I=\sum_{i\in I}/|I|$ for every positive bag $B_I$. 
+
+Noticing that in the origional approach of MI_SVM, Stuart, Ioannis, and Thomas are not using the instance from negative bag. With my new extension, after creating positive instance using the information from positive bags, The instance from positive bags will not be used in the training. Instead, we will use the instance in the negative bag. 
+
+The central idea of whole multi instance learning support vector machine is positive bag and negative bag provide imbalanced information. We know that all instance from negative bas are negative, thus we can use them to maximize the boundary of support vector machine.
+
 # Results, Analysis and Discussion
+
+## Accuracy (%)
+| Dataset | MIL_dis_meanmean | MIL_dis_meanmin | MIL_dis_minmin | mi_SVM | MI_SVM | mi_Euclidean_SVM | MI_SVM_mean |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Musk1 | 85 $\pm$ 4.1 | **86 $\pm$ 11.0** | 83 $\pm$ 8.7 | 61 $\pm$ 7.2 | 67 $\pm$ 13.0 | 65 $\pm$ 12.0 | 63 $\pm$ 14.0 |
+| Elephant | 82 $\pm$ 7.5 | 85 $\pm$ 5.9 | **87 $\pm$ 4.0** | 69 $\pm$ 2.0 | 60 $\pm$ 5.9 | 67 $\pm$ 5.8 | 69 $\pm$ 8.0 |
+
+## Precision (%)
+| Dataset | MIL_dis_meanmean | MIL_dis_meanmin | MIL_dis_minmin | mi_SVM | MI_SVM | mi_Euclidean_SVM | MI_SVM_mean |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Musk1 | **88 $\pm$ 6.7** | 85 $\pm$ 11.0 | 83 $\pm$ 11.0 | 66 $\pm$ 18.0 | 63 $\pm$ 11.0 | 62 $\pm$ 8.9 | 71 $\pm$ 32.0 |
+| Elephant | 83 $\pm$ 9.4 | 86 $\pm$ 6.1 | **88 $\pm$ 4.8** | 62 $\pm$ 1.6 | 56 $\pm$ 3.6 | 61 $\pm$ 4.8 | 62 $\pm$ 6.5 |
+
+## Recall (%)
+| Dataset | MIL_dis_meanmean | MIL_dis_meanmin | MIL_dis_minmin | mi_SVM | MI_SVM | mi_Euclidean_SVM | MI_SVM_mean |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Musk1 | 83 $\pm$ 15.0 | 87 $\pm$ 11.0 | 85 $\pm$ 7.7 | 84 $\pm$ 31.0 | **100 $\pm$ 0.0** | 86 $\pm$ 20.0 | 47 $\pm$ 31.0 |
+| Elephant | 81 $\pm$ 8.6 | 84 $\pm$ 7.3 | 86 $\pm$ 3.7 | 99 $\pm$ 2.0 | **100 $\pm$ 0.0** | 97 $\pm$ 2.4 | 99 $\pm$ 3.0 |
+
+These result are aquired by running on Musk1 and Elephant dataset. The setting for the set was cross validation with fold size equals to 5 and random shuffle examples while creating folds.
+
+Overall, the **dissimilarity method perform much better and stable** compared to multi instance learning support vector machine. The excellent 87 percent accuracy on Elephant and 86% accuracy on Musk1 proved the robustness of this dissimilarity representation. Also, interms of run time, dissimilarity method is more stable and efficient. It can compute the result within one minute for Musk1 dataset and less than one and a half minute on Elephant dataset. Compared to multi instance learning support vector machine which runtime can range from new minutes to more than hour, dissimilarity method seems to be a better choice.
+
+The weeknees of dissimilarity method is that it requires researcher to setup different equations to get the dissimilarity representation respect to the type of data that was given. When the data given was a discription of distribution or an attribute graph, dissimilarity method requires extra computation effort and may not be able to fully represent the origional dataset.
+
+For multi instance learning support vector machine, the major disadvantage is you need a very good starting point. By a very good starting point I mean the first epoch is very important. I printed out my gradient and I saw that for mi_SVM and MI_SVM, if the last few training example are those imputed example. Very likely that they are those negative example in the positive bag which been falsly labeled as positive during the setup phase. With those label used as the last few example to train the whole support vector machine, in the following examination phase, all instance will be classify as positive. Thus the algorithm will stop and return what it has. In ideal setting, there will be mixed imputed instance from positive bags and true negative instance from negative bags to correct the decision boundary. If that happened, the algorithm can run without error and have relatively high accuracy. That is also the reason for multi instance learning support vector machine having a relativevly higher standard deviation. 
+
+My extension indeed working in this process and save runtime significantly. For most of my test runs, both of my research extension can finish computing within ten minutes. Compared to running time which can extend to an hour for the origional approach, that is a big progress. Also, at the same time, my research extension does not hurt the performance of the algorithm. However, they share the same problem with original multi instance learning support vector machine that they also need a good starting point.
+
+For furture improvement of these methods, for dissimilarity method, I do not have that much to comment since it is both robust and efficent. For multi instance learning support vector machine, I would suggest whild doing cross validation, create the fold in order. If the example in the fold can appear in sequence which positive example and negative example show up repeatedly in order, I believe the performance of both mi_SVM and MI_SVM can be enhenced a lot. Since for now, some of the time they just stop at the first few epoch.
 
 # Bibliography
 J. Amores, "Multiple instance classification: Review, taxonomy and comparative study", in: Artificial Intelligence, Volume 201, 2013, pp. 81-105
